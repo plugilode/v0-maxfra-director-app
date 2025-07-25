@@ -371,9 +371,8 @@ const mockData = {
 
 // Dashboard Statistics
 export async function getDashboardStats() {
-  // Always use mock data for now to avoid server-side issues
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
-    console.log("Using mock data - Supabase not configured or running server-side")
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Using mock data - Supabase not configured")
     return mockData.stats
   }
 
@@ -427,8 +426,8 @@ export async function getDashboardStats() {
 
 // Get today's appointments with student and service details
 export async function getTodaysAppointments() {
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
-    console.log("Using mock data - Supabase not configured or running server-side")
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Using mock data - Supabase not configured")
     return mockData.todaysAppointments
   }
 
@@ -458,8 +457,8 @@ export async function getTodaysAppointments() {
 
 // Get appointments for calendar view
 export async function getAppointments(days = 7) {
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
-    console.log("Using mock data - Supabase not configured or running server-side")
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Using mock data - Supabase not configured")
     const today = new Date()
     const endDate = new Date(today)
     endDate.setDate(today.getDate() + days)
@@ -499,8 +498,8 @@ export async function getAppointments(days = 7) {
 
 // Get all students
 export async function getStudents() {
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
-    console.log("Using mock data - Supabase not configured or running server-side")
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Using mock data - Supabase not configured")
     return mockData.students
   }
 
@@ -523,8 +522,8 @@ export async function getStudents() {
 
 // Get all services
 export async function getServices() {
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
-    console.log("Using mock data - Supabase not configured or running server-side")
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Using mock data - Supabase not configured")
     return mockData.services
   }
 
@@ -545,8 +544,8 @@ export async function getServices() {
 
 // Get all locations
 export async function getLocations() {
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
-    console.log("Using mock data - Supabase not configured or running server-side")
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Using mock data - Supabase not configured")
     return mockData.locations
   }
 
@@ -569,8 +568,8 @@ export async function getLocations() {
 
 // Get students eligible for diploma
 export async function getEligibleStudents() {
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
-    console.log("Using mock data - Supabase not configured or running server-side")
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Using mock data - Supabase not configured")
     return mockData.students.filter((s) => s.status === "graduated")
   }
 
@@ -594,8 +593,8 @@ export async function getEligibleStudents() {
 
 // Get students in progress
 export async function getStudentsInProgress() {
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
-    console.log("Using mock data - Supabase not configured or running server-side")
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Using mock data - Supabase not configured")
     return mockData.students.filter((s) => s.status === "active" && s.progress_percentage < 100)
   }
 
@@ -625,7 +624,7 @@ export async function addStudent(studentData: {
   email?: string
   program_id: string
 }) {
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
+  if (!isSupabaseConfigured || !supabase) {
     console.log("Mock mode - would add student:", studentData)
     return {
       id: Date.now().toString(),
@@ -667,7 +666,7 @@ export async function createAppointment(appointmentData: {
   end_time: string
   notes?: string
 }) {
-  if (!isSupabaseConfigured || !supabase || typeof window === "undefined") {
+  if (!isSupabaseConfigured || !supabase) {
     console.log("Mock mode - would create appointment:", appointmentData)
     return {
       id: Date.now().toString(),
