@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, MapPin, Phone, Plus, CalendarIcon } from "lucide-react"
+import { ArrowLeft, MapPin, Phone, Plus, CalendarIcon, Clock, Users } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import { getAppointments } from "@/lib/database"
 
@@ -26,13 +25,13 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true)
 
   const timeframes = [
-    { value: "1", label: "1 Day" },
-    { value: "3", label: "3 Days" },
-    { value: "5", label: "5 Days" },
-    { value: "7", label: "7 Days" },
-    { value: "10", label: "10 Days" },
-    { value: "14", label: "14 Days" },
-    { value: "30", label: "30 Days" },
+    { value: "1", label: "1 Day", color: "from-blue-500 to-blue-600" },
+    { value: "3", label: "3 Days", color: "from-emerald-500 to-emerald-600" },
+    { value: "5", label: "5 Days", color: "from-purple-500 to-purple-600" },
+    { value: "7", label: "7 Days", color: "from-pink-500 to-pink-600" },
+    { value: "10", label: "10 Days", color: "from-orange-500 to-orange-600" },
+    { value: "14", label: "14 Days", color: "from-indigo-500 to-indigo-600" },
+    { value: "30", label: "30 Days", color: "from-red-500 to-red-600" },
   ]
 
   useEffect(() => {
@@ -53,11 +52,11 @@ export default function Calendar() {
   const getLocationColor = (location: string) => {
     switch (location) {
       case "Polanco":
-        return "bg-purple-100 text-purple-800"
+        return "badge-purple"
       case "Ciudad Brisas":
-        return "bg-blue-100 text-blue-800"
+        return "badge-info"
       case "Perisur":
-        return "bg-green-100 text-green-800"
+        return "badge-success"
       default:
         return "bg-gray-100 text-gray-800"
     }
@@ -121,40 +120,46 @@ export default function Calendar() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
+    <div className="min-h-screen pb-20 fade-in">
+      {/* Modern Header */}
+      <div className="glass-card border-0 border-b border-white/20 px-6 py-4 sticky top-0 z-40">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => window.history.back()}
+              className="hover:bg-purple-50 rounded-full"
+            >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="font-semibold text-gray-900">Calendar</h1>
-              <p className="text-sm text-gray-500">Appointments Overview</p>
+              <h1 className="text-xl font-bold text-gradient">Calendar</h1>
+              <p className="text-sm text-gray-600 font-medium">Appointments Overview</p>
             </div>
           </div>
-          <Button
-            className="bg-green-600 hover:bg-green-700"
-            onClick={() => (window.location.href = "/appointments/new")}
-          >
+          <Button className="btn-success rounded-xl" onClick={() => (window.location.href = "/appointments/new")}>
             <Plus className="h-4 w-4 mr-2" />
             Book
           </Button>
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* Timeframe Selection */}
-        <div>
-          <h3 className="font-medium text-gray-900 mb-3">View Appointments</h3>
-          <div className="flex flex-wrap gap-2">
+      <div className="p-6 space-y-6">
+        {/* Enhanced Timeframe Selection */}
+        <div className="slide-up">
+          <h3 className="font-bold text-gray-900 mb-4 text-lg">View Appointments</h3>
+          <div className="flex flex-wrap gap-3">
             {timeframes.map((timeframe) => (
               <Button
                 key={timeframe.value}
                 variant={selectedTimeframe === timeframe.value ? "default" : "outline"}
                 size="sm"
-                className={selectedTimeframe === timeframe.value ? "bg-purple-600 hover:bg-purple-700" : ""}
+                className={
+                  selectedTimeframe === timeframe.value
+                    ? `bg-gradient-to-r ${timeframe.color} text-white shadow-lg hover:shadow-xl border-0 rounded-xl font-semibold`
+                    : "btn-secondary rounded-xl"
+                }
                 onClick={() => setSelectedTimeframe(timeframe.value)}
               >
                 {timeframe.label}
@@ -163,147 +168,172 @@ export default function Calendar() {
           </div>
         </div>
 
-        {/* Summary Card */}
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold text-gray-900">Next {selectedTimeframe} Days</h2>
-                <p className="text-sm text-gray-600">{appointments.length} appointments scheduled</p>
+        {/* Enhanced Summary Card */}
+        <div className="stat-card slide-up" style={{ animationDelay: "0.2s" }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50">
+                <CalendarIcon className="h-6 w-6 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent" />
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-blue-600">{appointments.length}</p>
-                <p className="text-sm text-gray-500">Total</p>
+              <div>
+                <h2 className="font-bold text-gray-900 text-lg">Next {selectedTimeframe} Days</h2>
+                <p className="text-gray-600 font-medium">{appointments.length} appointments scheduled</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-right">
+              <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                {appointments.length}
+              </p>
+              <p className="text-sm text-gray-500 font-medium">Total</p>
+            </div>
+          </div>
+        </div>
 
-        {/* Appointments by Day */}
+        {/* Enhanced Appointments by Day */}
         {loading ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-0 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                    <div className="h-2 bg-gray-200 rounded w-full"></div>
+              <div key={i} className="modern-card p-6">
+                <div className="animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded-lg w-3/4 mb-4"></div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gray-200 rounded-lg w-1/2"></div>
+                    <div className="h-20 bg-gray-200 rounded-lg w-full"></div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         ) : (
-          <div className="space-y-6">
-            {Object.entries(appointmentsByDay).map(([date, dayAppointments]) => (
-              <div key={date}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <CalendarIcon className="h-5 w-5 text-gray-600" />
-                    <h3 className="font-semibold text-gray-900">{formatDate(date)}</h3>
-                    {date === new Date().toISOString().split("T")[0] && (
-                      <Badge className="bg-green-100 text-green-800 text-xs">Today</Badge>
-                    )}
+          <div className="space-y-8">
+            {Object.entries(appointmentsByDay).map(([date, dayAppointments], dayIndex) => (
+              <div key={date} className="slide-up" style={{ animationDelay: `${dayIndex * 0.1}s` }}>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
+                      <CalendarIcon className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-lg">{formatDate(date)}</h3>
+                      {date === new Date().toISOString().split("T")[0] && (
+                        <Badge className="badge-success mt-1">Today</Badge>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-500">{dayAppointments.length} appointments</p>
+                  <Badge className="badge-info">{dayAppointments.length} appointments</Badge>
                 </div>
 
                 {/* Group appointments by location */}
                 {dayAppointments.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {Array.from(new Set(dayAppointments.map((apt) => apt.locations.name))).map((location) => {
                       const locationAppointments = dayAppointments.filter((apt) => apt.locations.name === location)
                       const locationInfo = locationAppointments[0].locations
 
                       return (
-                        <Card key={location} className="border-0 shadow-sm">
-                          <CardContent className="p-4">
-                            {/* Location Header */}
-                            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
-                              <div className="flex items-center space-x-3">
-                                <MapPin className="h-4 w-4 text-purple-600" />
-                                <div>
-                                  <h4 className="font-semibold text-gray-900">{location}</h4>
-                                  <p className="text-sm text-gray-600">{locationInfo.address}</p>
-                                  <div className="flex items-center space-x-1 mt-1">
-                                    <Phone className="h-3 w-3 text-gray-400" />
-                                    <span className="text-sm text-gray-600">{locationInfo.phone}</span>
-                                  </div>
+                        <div key={location} className="modern-card p-6 bounce-in">
+                          {/* Enhanced Location Header */}
+                          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                            <div className="flex items-center space-x-4">
+                              <div className="p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50">
+                                <MapPin className="h-5 w-5 text-purple-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-gray-900 text-lg">{location}</h4>
+                                <p className="text-gray-600 font-medium">{locationInfo.address}</p>
+                                <div className="flex items-center space-x-2 mt-2">
+                                  <Phone className="h-4 w-4 text-gray-400" />
+                                  <span className="text-sm text-gray-600 font-medium">{locationInfo.phone}</span>
                                 </div>
                               </div>
-                              <Badge className={`${getLocationColor(location)} text-xs`}>
-                                {locationAppointments.length} appointments
-                              </Badge>
                             </div>
+                            <Badge className={getLocationColor(location)}>
+                              {locationAppointments.length} appointments
+                            </Badge>
+                          </div>
 
-                            {/* Appointments for this location */}
-                            <div className="space-y-3">
-                              {locationAppointments.map((appointment) => (
-                                <div key={appointment.id} className="bg-gray-50 rounded-lg p-3">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <h5 className="font-medium text-gray-900">
+                          {/* Enhanced Appointments for this location */}
+                          <div className="space-y-4">
+                            {locationAppointments.map((appointment) => (
+                              <div
+                                key={appointment.id}
+                                className="bg-gradient-to-r from-gray-50 to-purple-50/30 rounded-2xl p-4 border border-gray-100/50"
+                              >
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="p-2 rounded-lg bg-white shadow-sm">
+                                      <Clock className="h-4 w-4 text-purple-600" />
+                                    </div>
+                                    <h5 className="font-bold text-gray-900">
                                       {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
                                     </h5>
-                                    <div className="flex items-center space-x-2">
-                                      <Badge
-                                        className={`text-xs ${
-                                          appointment.status === "confirmed"
-                                            ? "bg-green-100 text-green-800"
-                                            : "bg-yellow-100 text-yellow-800"
-                                        }`}
-                                      >
-                                        {appointment.status}
-                                      </Badge>
-                                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs px-2 py-1">
-                                        Edit
-                                      </Button>
-                                    </div>
                                   </div>
+                                  <div className="flex items-center space-x-3">
+                                    <Badge
+                                      className={appointment.status === "confirmed" ? "badge-success" : "badge-warning"}
+                                    >
+                                      {appointment.status}
+                                    </Badge>
+                                    <Button size="sm" className="btn-success text-xs px-3 py-1 rounded-lg">
+                                      Edit
+                                    </Button>
+                                  </div>
+                                </div>
 
-                                  <div className="bg-white rounded p-2">
-                                    <div className="flex items-center justify-between">
+                                <div className="bg-white rounded-xl p-4 shadow-sm">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                      <div className="p-2 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+                                        <Users className="h-4 w-4 text-purple-600" />
+                                      </div>
                                       <div>
-                                        <p className="font-medium text-gray-900 text-sm">
-                                          {appointment.students.full_name}
+                                        <p className="font-bold text-gray-900">{appointment.students.full_name}</p>
+                                        <p className="text-purple-600 font-semibold text-sm">
+                                          {appointment.services.name}
                                         </p>
-                                        <p className="text-xs text-gray-600">{appointment.services.name}</p>
-                                        <p className="text-xs text-gray-500">
-                                          Instructor: {appointment.instructors.name}
+                                        <p className="text-gray-600 text-sm">
+                                          Instructor:{" "}
+                                          <span className="font-medium">{appointment.instructors.name}</span>
                                         </p>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )
                     })}
                   </div>
                 ) : (
-                  <Card className="border-0 shadow-sm">
-                    <CardContent className="p-8 text-center">
-                      <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No appointments scheduled for this day</p>
-                    </CardContent>
-                  </Card>
+                  <div className="modern-card p-12 text-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CalendarIcon className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 font-medium">No appointments scheduled for this day</p>
+                  </div>
                 )}
               </div>
             ))}
 
             {appointments.length === 0 && (
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-8 text-center">
-                  <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No appointments found for the selected timeframe</p>
-                </CardContent>
-              </Card>
+              <div className="modern-card p-12 text-center slide-up">
+                <div className="w-20 h-20 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CalendarIcon className="h-10 w-10 text-purple-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No Appointments Found</h3>
+                <p className="text-gray-500 font-medium">No appointments found for the selected timeframe</p>
+              </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Floating Action Button */}
+      <button className="btn-floating" onClick={() => (window.location.href = "/appointments/new")}>
+        <Plus className="h-6 w-6" />
+      </button>
 
       <BottomNavigation currentPage="calendar" />
     </div>
