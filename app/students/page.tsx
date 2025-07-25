@@ -1,0 +1,156 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { ArrowLeft, Plus } from "lucide-react"
+import { BottomNavigation } from "@/components/bottom-navigation"
+import { getStudents } from "@/lib/database"
+
+interface Student {
+  id: string
+  full_name: string
+  phone: string
+  email: string | null
+  progress_percentage: number
+  status: "active" | "graduated" | "suspended"
+  services: { name: string }
+}
+
+export default function Students() {
+  const [students, setStudents] = useState<Student[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadStudents() {
+      try {
+        const data = await getStudents()
+        setStudents(data as Student[])
+      } catch (error) {
+        console.error("Error loading students:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadStudents()
+  }, [])
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 text-green-800"
+      case "graduated":
+        return "bg-blue-100 text-blue-800"
+      case "suspended":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getProgressColor = (progress: number) => {
+    if (progress >= 90) return "bg-green-500"
+    if (progress >= 70) return "bg-blue-500"
+    if (progress >= 50) return "bg-yellow-500"
+    return "bg-orange-500"
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="bg-white border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="font-semibold text-gray-900">Students</h1>
+            </div>
+            <Button className="bg-purple-600 hover:bg-purple-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add
+            </Button>
+          </div>
+        </div>
+        <div className="p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-2 bg-gray-200 rounded w-full"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="font-semibold text-gray-900">Students</h1>
+          </div>
+          <Button
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={() => (window.location.href = "/students/new")}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add
+          </Button>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        {students.map((student) => (
+          <Card key={student.id} className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">{student.full_name}</h3>
+                  <p className="text-sm text-gray-600">{student.services.name}</p>
+                  <p className="text-sm text-gray-500">{student.phone}</p>
+                  {student.email && <p className="text-sm text-gray-500">{student.email}</p>}
+                </div>
+                <Badge className={`${getStatusColor(student.status)} text-xs capitalize`}>{student.status}</Badge>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Progress: {student.progress_percentage}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(student.progress_percentage)}`}
+                    style={{ width: `${student.progress_percentage}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {students.length === 0 && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-8 text-center">
+              <p className="text-gray-500">No students found</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <BottomNavigation currentPage="students" />
+    </div>
+  )
+}
