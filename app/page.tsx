@@ -26,7 +26,6 @@ interface DashboardStats {
   totalStudents: number
   todaysClasses: number
   monthlyRevenue: number
-  satisfaction: number
 }
 
 interface TodaysAppointment {
@@ -46,7 +45,6 @@ export default function Dashboard() {
     totalStudents: 0,
     todaysClasses: 0,
     monthlyRevenue: 0,
-    satisfaction: 0,
   })
   const [todaysAppointments, setTodaysAppointments] = useState<TodaysAppointment[]>([])
   const [loading, setLoading] = useState(true)
@@ -103,12 +101,6 @@ export default function Dashboard() {
       value: loading ? "..." : formatCurrency(stats.monthlyRevenue),
       icon: DollarSign,
       color: "text-purple-600",
-    },
-    {
-      title: "Satisfaction",
-      value: loading ? "..." : `${stats.satisfaction}%`,
-      icon: Star,
-      color: "text-orange-600",
     },
   ]
 
@@ -204,11 +196,11 @@ export default function Dashboard() {
             {quickActions.map((action, index) => (
               <Button
                 key={index}
-                className={`${action.color} text-white h-20 flex flex-col items-center justify-center space-y-2`}
+                className={`${action.color} text-white h-16 flex flex-col items-center justify-center space-y-1 text-xs`}
                 onClick={() => (window.location.href = action.href)}
               >
                 <action.icon className="h-6 w-6" />
-                <span className="text-sm font-medium">{action.title}</span>
+                <span className="font-medium">{action.title}</span>
               </Button>
             ))}
           </div>
