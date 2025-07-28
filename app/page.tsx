@@ -26,7 +26,6 @@ interface DashboardStats {
   totalStudents: number
   todaysClasses: number
   monthlyRevenue: number
-  satisfaction: number
 }
 
 interface TodaysAppointment {
@@ -46,7 +45,6 @@ export default function Dashboard() {
     totalStudents: 0,
     todaysClasses: 0,
     monthlyRevenue: 0,
-    satisfaction: 0,
   })
   const [todaysAppointments, setTodaysAppointments] = useState<TodaysAppointment[]>([])
   const [loading, setLoading] = useState(true)
@@ -103,12 +101,6 @@ export default function Dashboard() {
       value: loading ? "..." : formatCurrency(stats.monthlyRevenue),
       icon: DollarSign,
       color: "text-purple-600",
-    },
-    {
-      title: "Satisfaction",
-      value: loading ? "..." : `${stats.satisfaction}%`,
-      icon: Star,
-      color: "text-orange-600",
     },
   ]
 

@@ -6,7 +6,6 @@ const mockData = {
     totalStudents: 8,
     todaysClasses: 5,
     monthlyRevenue: 185000,
-    satisfaction: 89,
   },
   todaysAppointments: [
     {
@@ -402,21 +401,10 @@ export async function getDashboardStats() {
 
     const monthlyRevenue = monthlyReceipts?.reduce((sum, receipt) => sum + receipt.amount, 0) || 0
 
-    // Calculate satisfaction (mock calculation based on completed appointments)
-    const { count: completedAppointments } = await supabase
-      .from("appointments")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "completed")
-
-    const { count: totalAppointments } = await supabase.from("appointments").select("*", { count: "exact", head: true })
-
-    const satisfaction = totalAppointments ? Math.round(((completedAppointments || 0) / totalAppointments) * 100) : 89
-
     return {
       totalStudents: totalStudents || 0,
       todaysClasses: todaysClasses || 0,
       monthlyRevenue,
-      satisfaction,
     }
   } catch (error) {
     console.error("Error fetching dashboard stats:", error)
