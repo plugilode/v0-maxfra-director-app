@@ -41,9 +41,10 @@ export default function Diplomas() {
     },
   ]
 
-  const handleGenerateDiploma = (studentId: number) => {
-    // Handle diploma generation
-    console.log("Generating diploma for student:", studentId)
+  const handleGenerateDiploma = (studentName: string) => {
+    const text = `Congratulations ${studentName}! Your diploma is ready.`
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`
+    window.open(url, "_blank")
   }
 
   return (
@@ -77,7 +78,7 @@ export default function Diplomas() {
                       </div>
                       <Button
                         className="bg-pink-600 hover:bg-pink-700"
-                        onClick={() => handleGenerateDiploma(student.id)}
+                        onClick={() => handleGenerateDiploma(student.name)}
                       >
                         <GraduationCap className="h-4 w-4 mr-2" />
                         Generate

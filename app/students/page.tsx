@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Plus } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
-import { getStudents } from "@/lib/database"
+import {
+  getStudents,
+  getLocalStudents,
+  removeLocalStudent,
+} from "@/lib/database"
 
 interface Student {
   id: string
@@ -26,7 +30,8 @@ export default function Students() {
     async function loadStudents() {
       try {
         const data = await getStudents()
-        setStudents(data as Student[])
+        const local = getLocalStudents() as Student[]
+        setStudents([...(data as Student[]), ...local])
       } catch (error) {
         console.error("Error loading students:", error)
       } finally {
@@ -55,6 +60,11 @@ export default function Students() {
     if (progress >= 70) return "bg-blue-500"
     if (progress >= 50) return "bg-yellow-500"
     return "bg-orange-500"
+  }
+
+  const handleRemove = (id: string) => {
+    removeLocalStudent(id)
+    setStudents((prev) => prev.filter((s) => s.id !== id))
   }
 
   if (loading) {
@@ -135,6 +145,24 @@ export default function Students() {
                     className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(student.progress_percentage)}`}
                     style={{ width: `${student.progress_percentage}%` }}
                   />
+                </div>
+                <div className="flex justify-end space-x-2 pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      (window.location.href = `/students/${student.id}/edit`)
+                    }
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleRemove(student.id)}
+                  >
+                    Remove
+                  </Button>
                 </div>
               </div>
             </CardContent>
