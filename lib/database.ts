@@ -764,3 +764,38 @@ export async function isAppointmentAvailable(
     return false
   }
 }
+
+// --- Local student helpers ---
+function getStoredStudents() {
+  if (typeof window === "undefined") return []
+  const raw = localStorage.getItem("localStudents")
+  return raw ? JSON.parse(raw) : []
+}
+
+function saveStoredStudents(students: any[]) {
+  if (typeof window === "undefined") return
+  localStorage.setItem("localStudents", JSON.stringify(students))
+}
+
+export function addLocalStudent(student: any) {
+  const students = getStoredStudents()
+  students.push(student)
+  saveStoredStudents(students)
+  return student
+}
+
+export function updateLocalStudent(id: string, data: any) {
+  const students = getStoredStudents().map((s: any) =>
+    s.id === id ? { ...s, ...data } : s,
+  )
+  saveStoredStudents(students)
+}
+
+export function removeLocalStudent(id: string) {
+  const students = getStoredStudents().filter((s: any) => s.id !== id)
+  saveStoredStudents(students)
+}
+
+export function getLocalStudents() {
+  return getStoredStudents()
+}
