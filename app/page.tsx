@@ -6,10 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
-  Users,
   Calendar,
-  DollarSign,
-  Star,
   CalendarDays,
   UserPlus,
   Plus,
@@ -20,14 +17,7 @@ import {
   Search,
 } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
-import { getDashboardStats, getTodaysAppointments } from "@/lib/database"
-
-interface DashboardStats {
-  totalStudents: number
-  todaysClasses: number
-  monthlyRevenue: number
-  satisfaction: number
-}
+import { getTodaysAppointments } from "@/lib/database"
 
 interface TodaysAppointment {
   id: string
@@ -42,21 +32,13 @@ interface TodaysAppointment {
 
 export default function Dashboard() {
   const [notifications] = useState(4)
-  const [stats, setStats] = useState<DashboardStats>({
-    totalStudents: 0,
-    todaysClasses: 0,
-    monthlyRevenue: 0,
-    satisfaction: 0,
-  })
   const [todaysAppointments, setTodaysAppointments] = useState<TodaysAppointment[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadDashboardData() {
       try {
-        const [statsData, appointmentsData] = await Promise.all([getDashboardStats(), getTodaysAppointments()])
-
-        setStats(statsData)
+        const appointmentsData = await getTodaysAppointments()
         setTodaysAppointments(appointmentsData as TodaysAppointment[])
       } catch (error) {
         console.error("Error loading dashboard data:", error)
@@ -67,16 +49,6 @@ export default function Dashboard() {
 
     loadDashboardData()
   }, [])
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
-  }
-
   const formatTime = (time: string) => {
     return new Date(`2000-01-01T${time}`).toLocaleTimeString("es-MX", {
       hour: "numeric",
@@ -84,33 +56,6 @@ export default function Dashboard() {
       hour12: true,
     })
   }
-
-  const dashboardStats = [
-    {
-      title: "Total Students",
-      value: loading ? "..." : stats.totalStudents.toString(),
-      icon: Users,
-      color: "text-blue-600",
-    },
-    {
-      title: "Today's Classes",
-      value: loading ? "..." : stats.todaysClasses.toString(),
-      icon: Calendar,
-      color: "text-green-600",
-    },
-    {
-      title: "Monthly Revenue",
-      value: loading ? "..." : formatCurrency(stats.monthlyRevenue),
-      icon: DollarSign,
-      color: "text-purple-600",
-    },
-    {
-      title: "Satisfaction",
-      value: loading ? "..." : `${stats.satisfaction}%`,
-      icon: Star,
-      color: "text-orange-600",
-    },
-  ]
 
   const quickActions = [
     {
@@ -180,35 +125,18 @@ export default function Dashboard() {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          {dashboardStats.map((stat, index) => (
-            <Card key={index} className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  </div>
-                  <stat.icon className={`h-8 w-8 ${stat.color}`} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
         {/* Quick Actions */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {quickActions.map((action, index) => (
               <Button
                 key={index}
-                className={`${action.color} text-white h-20 flex flex-col items-center justify-center space-y-2`}
+                className={`${action.color} text-white h-8 flex flex-col items-center justify-center space-y-0.5 text-[10px]`}
                 onClick={() => (window.location.href = action.href)}
               >
-                <action.icon className="h-6 w-6" />
-                <span className="text-sm font-medium">{action.title}</span>
+                <action.icon className="h-4 w-4" />
+                <span className="font-medium">{action.title}</span>
               </Button>
             ))}
           </div>
