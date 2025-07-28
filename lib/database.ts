@@ -6,7 +6,6 @@ const mockData = {
     totalStudents: 8,
     todaysClasses: 5,
     monthlyRevenue: 185000,
-    satisfaction: 89,
   },
   todaysAppointments: [
     {
@@ -402,21 +401,10 @@ export async function getDashboardStats() {
 
     const monthlyRevenue = monthlyReceipts?.reduce((sum, receipt) => sum + receipt.amount, 0) || 0
 
-    // Calculate satisfaction (mock calculation based on completed appointments)
-    const { count: completedAppointments } = await supabase
-      .from("appointments")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "completed")
-
-    const { count: totalAppointments } = await supabase.from("appointments").select("*", { count: "exact", head: true })
-
-    const satisfaction = totalAppointments ? Math.round(((completedAppointments || 0) / totalAppointments) * 100) : 89
-
     return {
       totalStudents: totalStudents || 0,
       todaysClasses: todaysClasses || 0,
       monthlyRevenue,
-      satisfaction,
     }
   } catch (error) {
     console.error("Error fetching dashboard stats:", error)
@@ -460,6 +448,7 @@ export async function getAppointments(days = 7) {
   if (!isSupabaseConfigured || !supabase) {
     console.log("Using mock data - Supabase not configured")
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const endDate = new Date(today)
     endDate.setDate(today.getDate() + days)
 
@@ -691,4 +680,110 @@ export async function createAppointment(appointmentData: {
     console.error("Error creating appointment:", error)
     throw error
   }
+}
+
+// Search students by name
+export async function searchStudents(query: string) {
+  if (!query) return []
+
+  if (!isSupabaseConfigured || !supabase) {
+    return mockData.students.filter((s) =>
+      s.full_name.toLowerCase().includes(query.toLowerCase()),
+    )
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("students")
+      .select(
+        `*,
+        services (name)
+      `,
+      )
+      .ilike("full_name", `%${query}%`)
+      .order("full_name")
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error("Error searching students:", error)
+    return []
+  }
+}
+
+// Check if appointment slot is free
+export async function isAppointmentAvailable(
+  appointment_date: string,
+  start_time: string,
+  end_time: string,
+  location_name: string,
+) {
+  const newStart = new Date(`${appointment_date}T${start_time}`)
+  const newEnd = new Date(`${appointment_date}T${end_time}`)
+
+  if (!isSupabaseConfigured || !supabase) {
+    return !mockData.appointments.some((apt) => {
+      return (
+        apt.appointment_date === appointment_date &&
+        apt.locations.name === location_name &&
+        new Date(`${apt.appointment_date}T${apt.start_time}`) < newEnd &&
+        new Date(`${apt.appointment_date}T${apt.end_time}`) > newStart
+      )
+    })
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("start_time,end_time,locations(name)")
+      .eq("appointment_date", appointment_date)
+      .eq("locations.name", location_name)
+
+    if (error) throw error
+
+    return !(data || []).some((apt) => {
+      return (
+        new Date(`${appointment_date}T${apt.start_time}`) < newEnd &&
+        new Date(`${appointment_date}T${apt.end_time}`) > newStart
+      )
+    })
+  } catch (error) {
+    console.error("Error checking appointment availability:", error)
+    return false
+  }
+}
+
+// --- Local student helpers ---
+function getStoredStudents() {
+  if (typeof window === "undefined") return []
+  const raw = localStorage.getItem("localStudents")
+  return raw ? JSON.parse(raw) : []
+}
+
+function saveStoredStudents(students: any[]) {
+  if (typeof window === "undefined") return
+  localStorage.setItem("localStudents", JSON.stringify(students))
+}
+
+export function addLocalStudent(student: any) {
+  const students = getStoredStudents()
+  students.push(student)
+  saveStoredStudents(students)
+  return student
+}
+
+export function updateLocalStudent(id: string, data: any) {
+  const students = getStoredStudents().map((s: any) =>
+    s.id === id ? { ...s, ...data } : s,
+  )
+  saveStoredStudents(students)
+}
+
+export function removeLocalStudent(id: string) {
+  const students = getStoredStudents().filter((s: any) => s.id !== id)
+  saveStoredStudents(students)
+}
+
+export function getLocalStudents() {
+  return getStoredStudents()
 }

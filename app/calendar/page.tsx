@@ -4,6 +4,13 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { ArrowLeft, MapPin, Phone, Plus, CalendarIcon } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import { getAppointments } from "@/lib/database"
@@ -22,7 +29,10 @@ interface Appointment {
 
 export default function Calendar() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("7")
+  const [allAppointments, setAllAppointments] = useState<Appointment[]>([])
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [teachers, setTeachers] = useState<string[]>([])
+  const [selectedTeacher, setSelectedTeacher] = useState("All")
   const [loading, setLoading] = useState(true)
 
   const timeframes = [
@@ -38,8 +48,14 @@ export default function Calendar() {
   useEffect(() => {
     async function loadAppointments() {
       try {
-        const data = await getAppointments(Number.parseInt(selectedTimeframe))
-        setAppointments(data as Appointment[])
+        const data = (await getAppointments(
+          Number.parseInt(selectedTimeframe),
+        )) as Appointment[]
+        setAllAppointments(data)
+        const uniqueTeachers = Array.from(
+          new Set(data.map((a) => a.instructors.name)),
+        )
+        setTeachers(uniqueTeachers)
       } catch (error) {
         console.error("Error loading appointments:", error)
       } finally {
@@ -50,14 +66,32 @@ export default function Calendar() {
     loadAppointments()
   }, [selectedTimeframe])
 
+  useEffect(() => {
+    function filterData(apps: Appointment[]) {
+      let result = apps.filter((a) => {
+        const date = new Date(a.appointment_date)
+        const day = date.getDay()
+        const startHour = parseInt(a.start_time.split(":")[0])
+        const endHour = parseInt(a.end_time.split(":")[0])
+        return day >= 2 && day <= 6 && startHour >= 10 && endHour <= 20
+      })
+      if (selectedTeacher !== "All") {
+        result = result.filter((a) => a.instructors.name === selectedTeacher)
+      }
+      return result
+    }
+
+    setAppointments(filterData(allAppointments))
+  }, [allAppointments, selectedTeacher])
+
   const getLocationColor = (location: string) => {
     switch (location) {
       case "Polanco":
-        return "bg-purple-100 text-purple-800"
-      case "Ciudad Brisas":
         return "bg-blue-100 text-blue-800"
-      case "Perisur":
+      case "Ciudad Brisas":
         return "bg-green-100 text-green-800"
+      case "Perisur":
+        return "bg-red-100 text-red-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
@@ -161,6 +195,23 @@ export default function Calendar() {
               </Button>
             ))}
           </div>
+          {teachers.length > 0 && (
+            <div className="mt-4 max-w-xs">
+              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by Teacher" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Teachers</SelectItem>
+                  {teachers.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Summary Card */}
