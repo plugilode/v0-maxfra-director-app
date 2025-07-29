@@ -4,13 +4,16 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, MapPin, Phone, Clock } from "lucide-react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { ArrowLeft, MapPin, Phone, Clock, Search, Users, Calendar, CheckCircle } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import {
   searchStudents,
   createAppointment,
   isAppointmentAvailable,
 } from "@/lib/database"
+import { designSystem } from "@/lib/design-system"
 
 export default function NewAppointment() {
   const [step, setStep] = useState(1) // 1: Student, 2: Service, 3: Schedule, 4: Confirm
@@ -24,12 +27,12 @@ export default function NewAppointment() {
   const [confirmation, setConfirmation] = useState<any | null>(null)
 
   const services = [
-    { id: "microblading", name: "Advanced Microblading", duration: "3 hours", price: 3500 },
-    { id: "volume-lashes", name: "Volume Lashes Course", duration: "3 hours", price: 2800 },
-    { id: "microblading-touchup", name: "Microblading Touch-up", duration: "1 hour", price: 800 },
-    { id: "eyelash-application", name: "Eyelash Application", duration: "1.5 hours", price: 600 },
-    { id: "eyebrow-shaping", name: "Eyebrow Shaping", duration: "30 minutes", price: 300 },
-    { id: "consultation", name: "Consultation", duration: "30 minutes", price: 200 },
+    { id: "microblading", name: "Advanced Microblading", duration: "3 hours", price: 3500, category: "Premium" },
+    { id: "volume-lashes", name: "Volume Lashes Course", duration: "3 hours", price: 2800, category: "Course" },
+    { id: "microblading-touchup", name: "Microblading Touch-up", duration: "1 hour", price: 800, category: "Touch-up" },
+    { id: "eyelash-application", name: "Eyelash Application", duration: "1.5 hours", price: 600, category: "Service" },
+    { id: "eyebrow-shaping", name: "Eyebrow Shaping", duration: "30 minutes", price: 300, category: "Service" },
+    { id: "consultation", name: "Consultation", duration: "30 minutes", price: 200, category: "Consultation" },
   ]
 
   const locations = [
@@ -72,19 +75,33 @@ export default function NewAppointment() {
     load()
   }, [studentQuery])
 
-
   const getStepTitle = () => {
     switch (step) {
       case 1:
         return "Select Student"
       case 2:
-        return "Select Service"
+        return "Choose Service"
       case 3:
-        return "Schedule"
+        return "Schedule Time"
       case 4:
         return "Confirmation"
       default:
         return "New Appointment"
+    }
+  }
+
+  const getStepIcon = (stepNumber: number) => {
+    switch (stepNumber) {
+      case 1:
+        return Users
+      case 2:
+        return Calendar
+      case 3:
+        return Clock
+      case 4:
+        return CheckCircle
+      default:
+        return Users
     }
   }
 
@@ -145,180 +162,344 @@ export default function NewAppointment() {
     }
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+    }).format(amount)
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
+    <div className={designSystem.layout.page}>
+      {/* Enhanced Header */}
+      <div className={designSystem.components.header.gradient}>
         <div className="flex items-center space-x-3">
-          <Button variant="ghost" size="icon" onClick={() => (step > 1 ? setStep(step - 1) : window.history.back())}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => (step > 1 ? setStep(step - 1) : window.history.back())}
+            className="text-white hover:bg-white/20"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="font-semibold text-gray-900">New Appointment</h1>
-            <p className="text-sm text-gray-500">
-              Step {step} of 4: {getStepTitle()}
-            </p>
+          <div className="flex items-center space-x-3">
+            <Avatar className="h-12 w-12 bg-white/20 backdrop-blur-sm border-2 border-white/30">
+              <AvatarFallback className="bg-white/20 text-white font-bold text-lg">
+                <Calendar className="h-6 w-6" />
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="font-bold text-white text-xl">New Appointment</h1>
+              <p className="text-white/80 text-sm">
+                Step {step} of 4: {getStepTitle()}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* Progress Indicator */}
-        <div className="flex items-center space-x-2 mb-6">
-          {[1, 2, 3, 4].map((stepNum) => (
-            <div key={stepNum} className="flex items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  stepNum <= step ? "bg-purple-600 text-white" : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                {stepNum}
-              </div>
-              {stepNum < 4 && (
-                <div className={`w-8 h-1 mx-2 ${stepNum < step ? "bg-purple-600" : "bg-gray-200"}`} />
-              )}
+      <div className={designSystem.layout.container}>
+        {/* Enhanced Progress Indicator */}
+        <Card className={designSystem.components.card.primary}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              {[1, 2, 3, 4].map((stepNum) => {
+                const StepIcon = getStepIcon(stepNum)
+                const isCompleted = stepNum < step
+                const isCurrent = stepNum === step
+                return (
+                  <div key={stepNum} className="flex flex-col items-center flex-1">
+                    <div className="flex items-center w-full">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                          isCompleted 
+                            ? "bg-gradient-to-r from-green-500 to-green-600 text-white" 
+                            : isCurrent
+                            ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white" 
+                            : "bg-gray-200 text-gray-600"
+                        }`}
+                      >
+                        {isCompleted ? "✓" : <StepIcon className="h-5 w-5" />}
+                      </div>
+                      {stepNum < 4 && (
+                        <div className={`flex-1 h-1 mx-2 transition-all duration-300 ${
+                          stepNum < step ? "bg-gradient-to-r from-green-500 to-green-600" : "bg-gray-200"
+                        }`} />
+                      )}
+                    </div>
+                    <span className={`text-xs mt-2 font-medium transition-all duration-300 ${
+                      isCurrent ? "text-purple-600" : isCompleted ? "text-green-600" : "text-gray-500"
+                    }`}>
+                      {getStepTitle().split(' ')[stepNum === 1 ? 1 : stepNum === 2 ? 0 : stepNum === 3 ? 0 : 0]}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
-          ))}
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Step 1: Search Student */}
         {step === 1 && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Find Student</h2>
-            <Input
-              placeholder="Enter student name"
-              value={studentQuery}
-              onChange={(e) => setStudentQuery(e.target.value)}
-            />
-            <div className="space-y-2">
-              {students.map((student) => (
-                <Card
-                  key={student.id}
-                  className={`border-0 shadow-sm cursor-pointer transition-colors ${
-                    selectedStudent?.id === student.id ? "bg-purple-50 border-purple-200" : ""
-                  }`}
-                  onClick={() => setSelectedStudent(student)}
-                >
-                  <CardContent className="p-3">{student.full_name}</CardContent>
-                </Card>
-              ))}
-            </div>
+          <div className={designSystem.layout.section}>
+            <Card className={designSystem.components.card.base}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <Users className="h-6 w-6 text-purple-600" />
+                  <h2 className="text-xl font-bold text-gray-900">Find Student</h2>
+                </div>
+                
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    placeholder="Enter student name to search..."
+                    value={studentQuery}
+                    onChange={(e) => setStudentQuery(e.target.value)}
+                    className="pl-10 h-12 text-lg"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  {students.map((student) => (
+                    <Card
+                      key={student.id}
+                      className={`${designSystem.components.card.elevated} cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${
+                        selectedStudent?.id === student.id ? 'ring-2 ring-purple-500 bg-gradient-to-r from-purple-50 to-blue-50' : 'hover:shadow-lg'
+                      }`}
+                      onClick={() => setSelectedStudent(student)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-12 w-12 bg-gradient-to-r from-purple-400 to-blue-400">
+                            <AvatarFallback className="bg-gradient-to-r from-purple-400 to-blue-400 text-white font-semibold">
+                              {student.full_name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 text-lg">{student.full_name}</h3>
+                            <p className="text-purple-600 font-medium text-sm">{student.services?.name}</p>
+                            <p className="text-gray-500 text-sm">{student.phone}</p>
+                          </div>
+                          {selectedStudent?.id === student.id && (
+                            <CheckCircle className="h-6 w-6 text-green-500" />
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {studentQuery && students.length === 0 && (
+                    <div className="text-center py-8">
+                      <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No students found matching "{studentQuery}"</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {/* Step 2: Select Service */}
         {step === 2 && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Choose a Service</h2>
-            {services.map((service) => (
-              <Card
-                key={service.id}
-                className={`border-0 shadow-sm cursor-pointer transition-colors ${
-                  selectedService === service.id ? "bg-purple-50 border-purple-200" : ""
-                }`}
-                onClick={() => setSelectedService(service.id)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{service.name}</h3>
-                      <div className="flex items-center space-x-4 mt-1">
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">{service.duration}</span>
+          <div className={designSystem.layout.section}>
+            <Card className={designSystem.components.card.base}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <Calendar className="h-6 w-6 text-purple-600" />
+                  <h2 className="text-xl font-bold text-gray-900">Choose a Service</h2>
+                </div>
+
+                <div className="space-y-4">
+                  {services.map((service) => (
+                    <Card
+                      key={service.id}
+                      className={`${designSystem.components.card.elevated} cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${
+                        selectedService === service.id ? 'ring-2 ring-purple-500 bg-gradient-to-r from-purple-50 to-blue-50' : 'hover:shadow-lg'
+                      }`}
+                      onClick={() => setSelectedService(service.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="font-bold text-gray-900 text-lg">{service.name}</h3>
+                              <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                {service.category}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <div className="flex items-center space-x-2">
+                                <Clock className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm text-gray-600 font-medium">{service.duration}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-purple-600">{formatCurrency(service.price)}</p>
+                            {selectedService === service.id && (
+                              <CheckCircle className="h-6 w-6 text-green-500 ml-auto mt-2" />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-purple-600">${service.price}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
-
         {/* Step 3: Schedule */}
         {step === 3 && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Schedule</h2>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="appointmentDate">Date</label>
-              <Input
-                id="appointmentDate"
-                type="date"
-                value={appointmentDate}
-                onChange={(e) => setAppointmentDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="startTime">Start Time</label>
-              <Input
-                id="startTime"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-            </div>
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-900">Location</h3>
-              {locations.map((location) => (
-                <Card
-                  key={location.id}
-                  className={`border-0 shadow-sm cursor-pointer transition-colors ${
-                    selectedLocation === location.id ? "bg-purple-50 border-purple-200" : ""
-                  }`}
-                  onClick={() => setSelectedLocation(location.id)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <MapPin className="h-5 w-5 text-purple-600" />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{location.name}</h3>
-                        <p className="text-sm text-gray-600">{location.address}</p>
-                        <div className="flex items-center space-x-1 mt-2">
-                          <Phone className="h-3 w-3 text-gray-400" />
-                          <span className="text-sm text-gray-600">{location.phone}</span>
-                        </div>
-                      </div>
+          <div className={designSystem.layout.section}>
+            <Card className={designSystem.components.card.base}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <Clock className="h-6 w-6 text-purple-600" />
+                  <h2 className="text-xl font-bold text-gray-900">Schedule Appointment</h2>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Date and Time */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-gray-900" htmlFor="appointmentDate">Date</label>
+                      <Input
+                        id="appointmentDate"
+                        type="date"
+                        value={appointmentDate}
+                        onChange={(e) => setAppointmentDate(e.target.value)}
+                        className="h-12"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-gray-900" htmlFor="startTime">Start Time</label>
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="h-12"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Location Selection */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Select Location</h3>
+                    <div className="space-y-3">
+                      {locations.map((location) => (
+                        <Card
+                          key={location.id}
+                          className={`${designSystem.components.card.elevated} cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${
+                            selectedLocation === location.id ? 'ring-2 ring-purple-500 bg-gradient-to-r from-purple-50 to-blue-50' : 'hover:shadow-lg'
+                          }`}
+                          onClick={() => setSelectedLocation(location.id)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                                  <MapPin className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                  <h3 className="font-bold text-gray-900 text-lg">{location.name}</h3>
+                                  <p className="text-gray-600 text-sm">{location.address}</p>
+                                  <p className="text-purple-600 font-medium text-sm">Instructor: {location.instructor}</p>
+                                  <div className="flex items-center space-x-1 mt-1">
+                                    <Phone className="h-3 w-3 text-gray-400" />
+                                    <span className="text-sm text-gray-500">{location.phone}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              {selectedLocation === location.id && (
+                                <CheckCircle className="h-6 w-6 text-green-500" />
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {/* Step 4: Confirmation */}
         {step === 4 && confirmation && (
-          <div className="space-y-4 text-center">
-            <h2 className="text-lg font-semibold text-gray-900">Appointment Confirmed</h2>
-            <p className="text-sm text-gray-600">Confirmation #{confirmation.id}</p>
-            <p className="text-sm text-gray-600">{confirmation.student.full_name}</p>
-            <p className="text-sm text-gray-600">{confirmation.service.name}</p>
-            <p className="text-sm text-gray-600">
-              {confirmation.appointment_date} {confirmation.start_time} - {confirmation.end_time}
-            </p>
-            <p className="text-sm text-gray-600">{confirmation.location.name}</p>
-            <a
-              className="block bg-green-600 text-white py-2 rounded-md"
-              href={`https://wa.me/?text=${encodeURIComponent(
-                `Appointment confirmed!\n${confirmation.student.full_name}\n${confirmation.service.name}\n${confirmation.appointment_date} ${confirmation.start_time}\n${confirmation.location.name}`,
-              )}`}
-            >
-              Share via WhatsApp
-            </a>
+          <div className={designSystem.layout.section}>
+            <Card className={`${designSystem.components.card.primary} text-center`}>
+              <CardContent className="p-8">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="h-10 w-10 text-white" />
+                </div>
+                
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Appointment Confirmed!</h2>
+                <p className="text-gray-600 mb-6">Confirmation #{confirmation.id}</p>
+
+                <div className="space-y-4 text-left">
+                  <Card className={designSystem.components.card.base}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-12 w-12 bg-gradient-to-r from-purple-400 to-blue-400">
+                          <AvatarFallback className="bg-gradient-to-r from-purple-400 to-blue-400 text-white font-semibold">
+                            {confirmation.student.full_name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-bold text-gray-900">{confirmation.student.full_name}</h3>
+                          <p className="text-purple-600 font-medium">{confirmation.service.name}</p>
+                          <p className="text-gray-600 text-sm">
+                            {confirmation.appointment_date} • {confirmation.start_time} - {confirmation.end_time}
+                          </p>
+                          <p className="text-gray-600 text-sm">{confirmation.location.name}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Button
+                  className={`${designSystem.components.button.success} w-full mt-6`}
+                  onClick={() => {
+                    const shareText = `Appointment confirmed!\n${confirmation.student.full_name}\n${confirmation.service.name}\n${confirmation.appointment_date} ${confirmation.start_time}\n${confirmation.location.name}`
+                    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank')
+                  }}
+                >
+                  Share via WhatsApp
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {/* Navigation Buttons */}
-        <div className="pt-6">
-          <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={handleNext} disabled={!canProceed()}>
-            {step === 3 ? "Complete Booking" : step === 4 ? "Finish" : "Continue"}
-          </Button>
-        </div>
+        {step < 4 && (
+          <div className="pt-6">
+            <Button 
+              className={`w-full ${designSystem.components.button.gradient} h-14 text-lg font-semibold`} 
+              onClick={handleNext} 
+              disabled={!canProceed()}
+            >
+              {step === 3 ? "Complete Booking" : "Continue"}
+            </Button>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="pt-6">
+            <Button 
+              className={`w-full ${designSystem.components.button.primary} h-14 text-lg font-semibold`}
+              onClick={() => window.location.href = "/calendar"}
+            >
+              View Calendar
+            </Button>
+          </div>
+        )}
       </div>
 
       <BottomNavigation currentPage="calendar" />
