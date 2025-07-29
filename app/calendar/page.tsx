@@ -1,29 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  ArrowLeft,
-  Calendar as CalendarIcon,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  Clock,
-} from "lucide-react"
+import { ArrowLeft, MapPin, Phone, Plus, CalendarIcon, Clock, Users } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import { getAppointments } from "@/lib/database"
-import { designSystem, getStatusBadgeStyle } from "@/lib/design-system"
 
 interface Appointment {
   id: string
@@ -34,21 +16,28 @@ interface Appointment {
   students: { full_name: string }
   services: { name: string }
   instructors: { name: string }
-  locations: { name: string }
+  locations: { name: string; address: string; phone: string }
 }
 
 export default function Calendar() {
+  const [selectedTimeframe, setSelectedTimeframe] = useState("7")
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedPeriod, setSelectedPeriod] = useState(1) // 1=week, 7=week, 30=month
-  const [filterInstructor, setFilterInstructor] = useState("all")
-  const [currentWeekStart, setCurrentWeekStart] = useState(new Date())
+
+  const timeframes = [
+    { value: "1", label: "1 Day", color: "from-blue-500 to-blue-600" },
+    { value: "3", label: "3 Days", color: "from-emerald-500 to-emerald-600" },
+    { value: "5", label: "5 Days", color: "from-purple-500 to-purple-600" },
+    { value: "7", label: "7 Days", color: "from-pink-500 to-pink-600" },
+    { value: "10", label: "10 Days", color: "from-orange-500 to-orange-600" },
+    { value: "14", label: "14 Days", color: "from-indigo-500 to-indigo-600" },
+    { value: "30", label: "30 Days", color: "from-red-500 to-red-600" },
+  ]
 
   useEffect(() => {
     async function loadAppointments() {
-      setLoading(true)
       try {
-        const data = await getAppointments(selectedPeriod)
+        const data = await getAppointments(Number.parseInt(selectedTimeframe))
         setAppointments(data as Appointment[])
       } catch (error) {
         console.error("Error loading appointments:", error)
@@ -56,11 +45,25 @@ export default function Calendar() {
         setLoading(false)
       }
     }
+
     loadAppointments()
-  }, [selectedPeriod])
+  }, [selectedTimeframe])
+
+  const getLocationColor = (location: string) => {
+    switch (location) {
+      case "Polanco":
+        return "badge-purple"
+      case "Ciudad Brisas":
+        return "badge-info"
+      case "Perisur":
+        return "badge-success"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
 
   const formatTime = (time: string) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString("en-US", {
+    return new Date(`2000-01-01T${time}`).toLocaleTimeString("es-MX", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
@@ -68,307 +71,269 @@ export default function Calendar() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    })
-  }
+    const date = new Date(dateString)
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(today.getDate() + 1)
 
-  const getWeekDays = (startDate: Date) => {
-    const days = []
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(startDate)
-      day.setDate(startDate.getDate() + i)
-      days.push(day)
+    if (date.toDateString() === today.toDateString()) {
+      return (
+        "Today - " +
+        date.toLocaleDateString("es-MX", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      )
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return (
+        "Tomorrow - " +
+        date.toLocaleDateString("es-MX", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      )
+    } else {
+      return date.toLocaleDateString("es-MX", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
     }
-    return days
   }
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentWeekStart)
-    newDate.setDate(currentWeekStart.getDate() + (direction === 'next' ? 7 : -7))
-    setCurrentWeekStart(newDate)
-  }
-
-  const weekDays = getWeekDays(currentWeekStart)
-  const todayString = new Date().toISOString().split('T')[0]
-
-  const filteredAppointments = appointments.filter(appointment => {
-    if (filterInstructor === "all") return true
-    return appointment.instructors.name === filterInstructor
-  })
-
-  const groupedAppointments = weekDays.map(day => {
-    const dayString = day.toISOString().split('T')[0]
-    const dayAppointments = filteredAppointments.filter(
-      appointment => appointment.appointment_date === dayString
-    )
-    return {
-      date: day,
-      dateString: dayString,
-      appointments: dayAppointments
-    }
-  })
-
-  const instructors = [...new Set(appointments.map(a => a.instructors.name))]
-  const stats = {
-    total: appointments.length,
-    today: appointments.filter(a => a.appointment_date === todayString).length,
-    confirmed: appointments.filter(a => a.status === 'confirmed').length,
-  }
+  // Group appointments by date
+  const appointmentsByDay = appointments.reduce(
+    (acc, appointment) => {
+      const date = appointment.appointment_date
+      if (!acc[date]) {
+        acc[date] = []
+      }
+      acc[date].push(appointment)
+      return acc
+    },
+    {} as Record<string, Appointment[]>,
+  )
 
   return (
-    <div className={designSystem.layout.page}>
-      {/* Enhanced Header */}
-      <div className={designSystem.components.header.gradient}>
+    <div className="min-h-screen pb-20 fade-in">
+      {/* Modern Header */}
+      <div className="glass-card border-0 border-b border-white/20 px-6 py-4 sticky top-0 z-40">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-12 w-12 bg-white/20 backdrop-blur-sm border-2 border-white/30">
-              <AvatarFallback className="bg-white/20 text-white font-bold text-lg">
-                <CalendarIcon className="h-6 w-6" />
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => window.history.back()}
+              className="hover:bg-purple-50 rounded-full"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <div>
-              <h1 className="font-bold text-white text-xl">Calendar</h1>
-              <p className="text-white/80 text-sm">{stats.total} appointments this period</p>
+              <h1 className="text-xl font-bold text-gradient">Calendar</h1>
+              <p className="text-sm text-gray-600 font-medium">Appointments Overview</p>
             </div>
           </div>
-          <Button
-            size="icon"
-            className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-            onClick={() => (window.location.href = "/appointments/new")}
-          >
-            <Plus className="h-5 w-5" />
+          <Button className="btn-success rounded-xl" onClick={() => (window.location.href = "/appointments/new")}>
+            <Plus className="h-4 w-4 mr-2" />
+            Book
           </Button>
         </div>
       </div>
 
-      <div className={designSystem.layout.container}>
-        {/* Stats Overview */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card className={`${designSystem.components.card.base} bg-blue-50 border border-blue-200`}>
-            <CardContent className="p-4 text-center">
-              <CalendarIcon className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-              <p className="text-sm text-blue-600 font-medium">Total</p>
-            </CardContent>
-          </Card>
-          <Card className={`${designSystem.components.card.base} bg-green-50 border border-green-200`}>
-            <CardContent className="p-4 text-center">
-              <Clock className="h-8 w-8 text-green-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{stats.today}</p>
-              <p className="text-sm text-green-600 font-medium">Today</p>
-            </CardContent>
-          </Card>
-          <Card className={`${designSystem.components.card.base} bg-purple-50 border border-purple-200`}>
-            <CardContent className="p-4 text-center">
-              <div className="h-8 w-8 mx-auto mb-2 bg-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-bold">✓</span>
-              </div>
-              <p className="text-2xl font-bold text-gray-900">{stats.confirmed}</p>
-              <p className="text-sm text-purple-600 font-medium">Confirmed</p>
-            </CardContent>
-          </Card>
+      <div className="p-6 space-y-6">
+        {/* Enhanced Timeframe Selection */}
+        <div className="slide-up">
+          <h3 className="font-bold text-gray-900 mb-4 text-lg">View Appointments</h3>
+          <div className="flex flex-wrap gap-3">
+            {timeframes.map((timeframe) => (
+              <Button
+                key={timeframe.value}
+                variant={selectedTimeframe === timeframe.value ? "default" : "outline"}
+                size="sm"
+                className={
+                  selectedTimeframe === timeframe.value
+                    ? `bg-gradient-to-r ${timeframe.color} text-white shadow-lg hover:shadow-xl border-0 rounded-xl font-semibold`
+                    : "btn-secondary rounded-xl"
+                }
+                onClick={() => setSelectedTimeframe(timeframe.value)}
+              >
+                {timeframe.label}
+              </Button>
+            ))}
+          </div>
         </div>
 
-        {/* Enhanced Filters */}
-        <Card className={designSystem.components.card.primary}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Filter className="h-5 w-5 text-purple-600" />
-                <span className="font-medium text-gray-900">Filters</span>
+        {/* Enhanced Summary Card */}
+        <div className="stat-card slide-up" style={{ animationDelay: "0.2s" }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50">
+                <CalendarIcon className="h-6 w-6 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent" />
               </div>
-              <div className="flex items-center space-x-3">
-                <Select value={selectedPeriod.toString()} onValueChange={(value) => setSelectedPeriod(Number(value))}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Today</SelectItem>
-                    <SelectItem value="7">This Week</SelectItem>
-                    <SelectItem value="30">This Month</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={filterInstructor} onValueChange={setFilterInstructor}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="All Instructors" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Instructors</SelectItem>
-                    {instructors.map((instructor) => (
-                      <SelectItem key={instructor} value={instructor}>
-                        {instructor}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div>
+                <h2 className="font-bold text-gray-900 text-lg">Next {selectedTimeframe} Days</h2>
+                <p className="text-gray-600 font-medium">{appointments.length} appointments scheduled</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Week Navigation */}
-        <Card className={designSystem.components.card.base}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigateWeek('prev')}
-                className="text-purple-600 hover:bg-purple-50"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              
-              <div className="text-center">
-                <h3 className="font-bold text-gray-900">
-                  {currentWeekStart.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Week of {currentWeekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </p>
-              </div>
-              
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigateWeek('next')}
-                className="text-purple-600 hover:bg-purple-50"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
+            <div className="text-right">
+              <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                {appointments.length}
+              </p>
+              <p className="text-sm text-gray-500 font-medium">Total</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Calendar View */}
+        {/* Enhanced Appointments by Day */}
         {loading ? (
-          <Card className={designSystem.components.card.primary}>
-            <CardContent className="p-8 text-center">
-              <div className="animate-pulse space-y-4">
-                <div className="h-4 bg-purple-200 rounded w-3/4 mx-auto"></div>
-                <div className="h-4 bg-blue-200 rounded w-1/2 mx-auto"></div>
-                <div className="h-4 bg-purple-200 rounded w-2/3 mx-auto"></div>
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="modern-card p-6">
+                <div className="animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded-lg w-3/4 mb-4"></div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gray-200 rounded-lg w-1/2"></div>
+                    <div className="h-20 bg-gray-200 rounded-lg w-full"></div>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
         ) : (
-          <div className="space-y-4">
-            {groupedAppointments.map(({ date, dateString, appointments: dayAppointments }) => {
-              const isToday = dateString === todayString
-              return (
-                <Card 
-                  key={dateString} 
-                  className={`${designSystem.components.card.base} ${
-                    isToday ? 'ring-2 ring-purple-500 bg-gradient-to-r from-purple-50 to-blue-50' : ''
-                  }`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                          isToday ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          <span className="font-bold">{date.getDate()}</span>
-                        </div>
-                        <div>
-                          <h3 className={`font-bold ${isToday ? 'text-purple-900' : 'text-gray-900'}`}>
-                            {formatDate(dateString)}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {dayAppointments.length} appointment{dayAppointments.length !== 1 ? 's' : ''}
-                          </p>
-                        </div>
-                      </div>
-                      {isToday && (
-                        <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-                          Today
-                        </Badge>
+          <div className="space-y-8">
+            {Object.entries(appointmentsByDay).map(([date, dayAppointments], dayIndex) => (
+              <div key={date} className="slide-up" style={{ animationDelay: `${dayIndex * 0.1}s` }}>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
+                      <CalendarIcon className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-lg">{formatDate(date)}</h3>
+                      {date === new Date().toISOString().split("T")[0] && (
+                        <Badge className="badge-success mt-1">Today</Badge>
                       )}
                     </div>
+                  </div>
+                  <Badge className="badge-info">{dayAppointments.length} appointments</Badge>
+                </div>
 
-                    {dayAppointments.length > 0 ? (
-                      <div className="space-y-3">
-                        {dayAppointments.map((appointment) => (
-                          <Card 
-                            key={appointment.id} 
-                            className={`${designSystem.components.card.elevated} hover:shadow-xl transition-all duration-200`}
-                          >
-                            <CardContent className="p-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3 flex-1">
-                                  <Avatar className="h-10 w-10 bg-gradient-to-r from-purple-400 to-blue-400">
-                                    <AvatarFallback className="bg-gradient-to-r from-purple-400 to-blue-400 text-white font-semibold text-sm">
-                                      {appointment.students.full_name.charAt(0)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1">
-                                    <h4 className="font-semibold text-gray-900">
-                                      {appointment.students.full_name}
-                                    </h4>
-                                    <p className="text-purple-600 font-medium text-sm">
-                                      {appointment.services.name}
-                                    </p>
-                                    <p className="text-gray-500 text-sm">
-                                      Instructor: {appointment.instructors.name}
-                                    </p>
-                                  </div>
+                {/* Group appointments by location */}
+                {dayAppointments.length > 0 ? (
+                  <div className="space-y-6">
+                    {Array.from(new Set(dayAppointments.map((apt) => apt.locations.name))).map((location) => {
+                      const locationAppointments = dayAppointments.filter((apt) => apt.locations.name === location)
+                      const locationInfo = locationAppointments[0].locations
+
+                      return (
+                        <div key={location} className="modern-card p-6 bounce-in">
+                          {/* Enhanced Location Header */}
+                          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                            <div className="flex items-center space-x-4">
+                              <div className="p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50">
+                                <MapPin className="h-5 w-5 text-purple-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-gray-900 text-lg">{location}</h4>
+                                <p className="text-gray-600 font-medium">{locationInfo.address}</p>
+                                <div className="flex items-center space-x-2 mt-2">
+                                  <Phone className="h-4 w-4 text-gray-400" />
+                                  <span className="text-sm text-gray-600 font-medium">{locationInfo.phone}</span>
                                 </div>
+                              </div>
+                            </div>
+                            <Badge className={getLocationColor(location)}>
+                              {locationAppointments.length} appointments
+                            </Badge>
+                          </div>
 
-                                <div className="text-right space-y-2">
-                                  <div className="flex items-center space-x-2">
-                                    <Badge className={getStatusBadgeStyle(appointment.status)}>
+                          {/* Enhanced Appointments for this location */}
+                          <div className="space-y-4">
+                            {locationAppointments.map((appointment) => (
+                              <div
+                                key={appointment.id}
+                                className="bg-gradient-to-r from-gray-50 to-purple-50/30 rounded-2xl p-4 border border-gray-100/50"
+                              >
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="p-2 rounded-lg bg-white shadow-sm">
+                                      <Clock className="h-4 w-4 text-purple-600" />
+                                    </div>
+                                    <h5 className="font-bold text-gray-900">
+                                      {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
+                                    </h5>
+                                  </div>
+                                  <div className="flex items-center space-x-3">
+                                    <Badge
+                                      className={appointment.status === "confirmed" ? "badge-success" : "badge-warning"}
+                                    >
                                       {appointment.status}
                                     </Badge>
-                                    <Button 
-                                      size="sm" 
-                                      className={designSystem.components.button.success}
-                                    >
+                                    <Button size="sm" className="btn-success text-xs px-3 py-1 rounded-lg">
                                       Edit
                                     </Button>
                                   </div>
-                                  <p className="font-bold text-gray-900">
-                                    {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
-                                  </p>
+                                </div>
+
+                                <div className="bg-white rounded-xl p-4 shadow-sm">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                      <div className="p-2 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+                                        <Users className="h-4 w-4 text-purple-600" />
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-gray-900">{appointment.students.full_name}</p>
+                                        <p className="text-purple-600 font-semibold text-sm">
+                                          {appointment.services.name}
+                                        </p>
+                                        <p className="text-gray-600 text-sm">
+                                          Instructor:{" "}
+                                          <span className="font-medium">{appointment.instructors.name}</span>
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <CalendarIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500">No appointments scheduled</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })}
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="modern-card p-12 text-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CalendarIcon className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 font-medium">No appointments scheduled for this day</p>
+                  </div>
+                )}
+              </div>
+            ))}
 
             {appointments.length === 0 && (
-              <Card className={designSystem.components.card.primary}>
-                <CardContent className="p-8 text-center">
-                  <CalendarIcon className={`${designSystem.icons.sizes.xxl} text-purple-400 mx-auto mb-4`} />
-                  <p className="text-gray-600 text-lg font-medium">No appointments found for the selected timeframe</p>
-                  <p className="text-gray-500 text-sm mt-2">Schedule your first appointment to get started!</p>
-                  <Button 
-                    className={`${designSystem.components.button.gradient} mt-4`}
-                    onClick={() => (window.location.href = "/appointments/new")}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Appointment
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="modern-card p-12 text-center slide-up">
+                <div className="w-20 h-20 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CalendarIcon className="h-10 w-10 text-purple-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No Appointments Found</h3>
+                <p className="text-gray-500 font-medium">No appointments found for the selected timeframe</p>
+              </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Floating Action Button */}
+      <button className="btn-floating" onClick={() => (window.location.href = "/appointments/new")}>
+        <Plus className="h-6 w-6" />
+      </button>
 
       <BottomNavigation currentPage="calendar" />
     </div>

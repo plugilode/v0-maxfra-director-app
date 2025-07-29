@@ -1,13 +1,21 @@
 import { createClient } from "@supabase/supabase-js"
 
-// Check if Supabase environment variables are available
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// Check if we're in the browser and if Supabase environment variables are available
+const supabaseUrl = typeof window !== "undefined" ? process.env.NEXT_PUBLIC_SUPABASE_URL : undefined
+const supabaseAnonKey = typeof window !== "undefined" ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : undefined
 
-// Only create Supabase client if environment variables are available
-export const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null
+// Only create Supabase client if we're in the browser and environment variables are available
+export const supabase =
+  typeof window !== "undefined" && supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      })
+    : null
 
-export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)
+export const isSupabaseConfigured = !!(typeof window !== "undefined" && supabaseUrl && supabaseAnonKey)
 
 export type Database = {
   public: {
