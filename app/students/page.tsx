@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Plus, Users, TrendingUp, Mail, Phone } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
+import { StudentDetailDialog } from "@/components/student-detail-dialog"
 import { getStudents } from "@/lib/database"
 
 interface Student {
@@ -20,6 +21,8 @@ interface Student {
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   useEffect(() => {
     async function loadStudents() {
@@ -35,6 +38,11 @@ export default function Students() {
 
     loadStudents()
   }, [])
+
+  const handleStudentClick = (student: Student) => {
+    setSelectedStudent(student)
+    setDialogOpen(true)
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -155,10 +163,17 @@ export default function Students() {
         {/* Students List */}
         <div className="space-y-4">
           {students.map((student, index) => (
-            <div key={student.id} className="modern-card p-6 bounce-in" style={{ animationDelay: `${index * 0.1}s` }}>
+            <div 
+              key={student.id} 
+              className="modern-card p-6 bounce-in cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]" 
+              style={{ animationDelay: `${index * 0.1}s` }}
+              onClick={() => handleStudentClick(student)}
+            >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 text-lg mb-1">{student.full_name}</h3>
+                  <h3 className="font-bold text-gray-900 text-lg mb-1 hover:text-purple-600 transition-colors">
+                    {student.full_name}
+                  </h3>
                   <p className="text-purple-600 font-semibold mb-2">{student.services.name}</p>
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
@@ -210,6 +225,13 @@ export default function Students() {
       <button className="btn-floating" onClick={() => (window.location.href = "/students/new")}>
         <Plus className="h-6 w-6" />
       </button>
+
+      {/* Student Detail Dialog */}
+      <StudentDetailDialog
+        student={selectedStudent}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
 
       <BottomNavigation currentPage="students" />
     </div>
