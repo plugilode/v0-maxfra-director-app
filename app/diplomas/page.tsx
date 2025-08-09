@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, GraduationCap } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
+import { generateDiplomaPDF } from "@/lib/documents"
 
 export default function Diplomas() {
   const eligibleStudents = [
@@ -41,8 +42,9 @@ export default function Diplomas() {
     },
   ]
 
-  const handleGenerateDiploma = (studentName: string) => {
-    const text = `Congratulations ${studentName}! Your diploma is ready.`
+  const handleGenerateDiploma = (student: { name: string; program: string }) => {
+    generateDiplomaPDF({ student: student.name, program: student.program })
+    const text = `Congratulations ${student.name}! Your diploma is ready.`
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`
     window.open(url, "_blank")
   }
@@ -78,7 +80,7 @@ export default function Diplomas() {
                       </div>
                       <Button
                         className="bg-pink-600 hover:bg-pink-700"
-                        onClick={() => handleGenerateDiploma(student.name)}
+                        onClick={() => handleGenerateDiploma(student)}
                       >
                         <GraduationCap className="h-4 w-4 mr-2" />
                         Generate

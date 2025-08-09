@@ -778,16 +778,28 @@ function saveStoredStudents(students: any[]) {
 }
 
 export function addLocalStudent(student: any) {
+  const normalized = {
+    ...student,
+    full_name: student.full_name ?? student.fullName,
+  }
   const students = getStoredStudents()
-  students.push(student)
+  students.push(normalized)
   saveStoredStudents(students)
-  return student
+  return normalized
 }
 
 export function updateLocalStudent(id: string, data: any) {
-  const students = getStoredStudents().map((s: any) =>
-    s.id === id ? { ...s, ...data } : s,
-  )
+  const students = getStoredStudents().map((s: any) => {
+    if (s.id === id) {
+      const updated = { ...s, ...data }
+      if (updated.fullName) {
+        updated.full_name = updated.full_name ?? updated.fullName
+        delete updated.fullName
+      }
+      return updated
+    }
+    return s
+  })
   saveStoredStudents(students)
 }
 
@@ -797,5 +809,9 @@ export function removeLocalStudent(id: string) {
 }
 
 export function getLocalStudents() {
-  return getStoredStudents()
+  const students = getStoredStudents().map((s: any) =>
+    s.full_name ? s : { ...s, full_name: s.fullName }
+  )
+  saveStoredStudents(students)
+  return students
 }

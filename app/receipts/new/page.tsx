@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
+import { generateReceiptPDF } from "@/lib/documents"
 
 export default function NewReceipt() {
   const [formData, setFormData] = useState({
@@ -47,6 +48,19 @@ export default function NewReceipt() {
           <a href={shareUrl} className="block bg-green-600 text-white py-2 rounded-md">
             Share via WhatsApp
           </a>
+          <Button
+            className="w-full bg-purple-600 hover:bg-purple-700"
+            onClick={() =>
+              generateReceiptPDF({
+                receiptNumber: confirmation,
+                student: formData.student,
+                amount: formData.amount,
+                method: formData.method,
+              })
+            }
+          >
+            Download PDF
+          </Button>
         </div>
         <BottomNavigation currentPage="documents" />
       </div>

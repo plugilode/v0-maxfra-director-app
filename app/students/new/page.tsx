@@ -16,7 +16,7 @@ import { addLocalStudent } from "@/lib/database"
 export default function AddStudent() {
   const [formData, setFormData] = useState({
     photo: "",
-    fullName: "",
+    full_name: "",
     address: "",
     responsible: "",
     covid: false,
@@ -71,7 +71,7 @@ export default function AddStudent() {
             className="w-full bg-purple-600 hover:bg-purple-700 mt-4"
             onClick={() => {
               const doc = new jsPDF()
-              doc.text(`Student: ${formData.fullName}`, 10, 10)
+              doc.text(`Student: ${formData.full_name}`, 10, 10)
               doc.text(`Course: ${formData.course}`, 10, 20)
               doc.text(`Phone: ${formData.phone}`, 10, 30)
               doc.save(`student_${confirmationId}.pdf`)
@@ -99,12 +99,12 @@ export default function AddStudent() {
       <div className="p-4">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name *</Label>
+            <Label htmlFor="full_name">Full Name *</Label>
             <Input
-              id="fullName"
+              id="full_name"
               placeholder="Enter student name"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              value={formData.full_name}
+              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               required
             />
           </div>

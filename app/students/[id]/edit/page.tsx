@@ -49,7 +49,7 @@ export default function EditStudent() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
-            <Input id="name" value={formData.fullName} onChange={e=>setFormData({...formData, fullName:e.target.value})} />
+            <Input id="name" value={formData.full_name} onChange={e=>setFormData({...formData, full_name:e.target.value})} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
